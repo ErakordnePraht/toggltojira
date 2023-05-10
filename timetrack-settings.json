@@ -1,0 +1,19 @@
+{
+    "roundTimeUp": true,
+    "toggl_api_key": "apiKey",
+    "toggl_api_endpoint": "https://api.track.toggl.com/api/v8/time_entries",
+    "projects": [
+        {
+            "key": "TEST",
+            "jiraId": 1
+        }
+    ],
+    "jiras": [
+        {
+            "id": 1,
+            "url": "https://someatlassiansite.example/",
+            "email": "jiraloginemail@email.example",
+            "api_key": "apiKey"
+        }
+    ]
+}
