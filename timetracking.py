@@ -24,7 +24,7 @@ def create_worklog_object(timeSpentSeconds, started, comment):
     data['started'] = started
     data['comment'] = comment
     return data
-def get_project_from_ticket(key_string, project_list) -> Project:
+def get_project_from_ticket(key_string, project_list) -> Project | None:
     for project in project_list:
         if key_string.startswith(project.key):
             return project
@@ -51,7 +51,10 @@ def get_local_time_offset() -> timedelta:
     local_time = datetime.now()
     # get the UTC offset of your local timezone
     local_tz = dateutil.tz.tzlocal()
-    return local_tz.utcoffset(local_time)
+    result = local_tz.utcoffset(local_time)
+    if not result:
+        result = timedelta()
+    return result
 def convert_local_time_to_utc(datetime: datetime) -> datetime:
     return datetime - get_local_time_offset()
 
