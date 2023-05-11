@@ -7,16 +7,18 @@ import math
 import dateutil.tz
 
 class Jira:
-    def __init__(self, id, url, email, api_key):
+    def __init__(self, id, url, email, api_key, auth_type):
         self.id = id
         self.url = url
         self.email = email
         self.api_key = api_key
+        self.auth_type = auth_type
 
 class Project:
     def __init__(self, key, jira):
         self.key = key
         self.jira = jira
+        
 
 def create_worklog_object(timeSpentSeconds, started, comment):
     data = {}
@@ -24,19 +26,28 @@ def create_worklog_object(timeSpentSeconds, started, comment):
     data['started'] = started
     data['comment'] = comment
     return data
-def get_project_from_ticket(key_string, project_list) -> Project | None:
+def get_project_from_ticket(key_string, project_list) -> Project:
     for project in project_list:
         if key_string.startswith(project.key):
             return project
     return None
 def reformat_toggl_date(date: str) -> str:
     return date.split('+')[0]+".000+0000"
-def create_basic_token(username, password):
+def create_basic_authorization(username, password) -> str:
     token = f"{username}:{password}"
-    return base64.b64encode(token.encode('utf-8')).decode('utf-8')
-def create_headers(username, password):
-    token = create_basic_token(username, password)
-    return {'Content-Type': 'application/json', 'Authorization': f'Basic {token}'}
+    encoded_token = base64.b64encode(token.encode('utf-8')).decode('utf-8')
+    return f"Basic {encoded_token}"
+def create_bearer_authorization(password) -> str:
+    token = f"{password}"
+    return f'Bearer {token}'
+def create_headers(auth_type, username, password):
+    if auth_type == "bearer":
+        auth_header = create_bearer_authorization(password)
+    else:
+        auth_header = create_basic_authorization(username, password)
+    result = {'Content-Type': 'application/json'}
+    result['Authorization'] = auth_header
+    return result
 def get_entry_duration(duration: int, is_round_up: bool) -> int:
     if (is_round_up):
         return math.ceil(duration / 900) * 900
@@ -67,7 +78,7 @@ settings = json.loads(json_data)
 # Create Jira instances
 jiras = {}
 for jira_data in settings['jiras']:
-    jira = Jira(jira_data['id'], jira_data['url'], jira_data['email'], jira_data['api_key'])
+    jira = Jira(jira_data['id'], jira_data['url'], jira_data['email'], jira_data['api_key'], jira_data['auth_type'])
     jiras[jira.id] = jira
 
 # Create Project instances
@@ -78,7 +89,7 @@ for project_data in settings['projects']:
     project = Project(project_data['key'], jira)
     projects.append(project)
 
-toggl_headers = create_headers(settings['toggl_api_key'], "api_token")
+toggl_headers = create_headers("basic", settings['toggl_api_key'], "api_token")
 
 # Enter dates and convert them to UTC
 print(F"Enter the dates in this format: {date.today().strftime('%Y-%m-%d')}")
@@ -96,7 +107,11 @@ end_date = convert_local_time_to_utc(datetime.strptime(end_date_input, "%Y-%m-%d
 # Get Toggl time entries
 toggl_params = {'start_date': start_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ'), 'end_date': end_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}
 response = requests.get(settings['toggl_api_endpoint'], headers=toggl_headers, params=toggl_params)
-time_entries = response.json()
+time_entries = []
+if response.ok:
+    time_entries = response.json()
+else:
+    print("Toggl API returned an error")
 
 tickets = []
 for entry in time_entries:
@@ -111,7 +126,7 @@ for entry in time_entries:
     entry_startdate = reformat_toggl_date(entry['start'])
 
     jira_issue_endpoint = f"{project.jira.url}rest/api/2/issue/{ticket}/worklog"
-    jira_headers = create_headers(project.jira.email, project.jira.api_key)
+    jira_headers = create_headers(project.jira.auth_type, project.jira.email, project.jira.api_key)
     jira_body = create_worklog_object(duration, entry_startdate, comment)
 
     response = requests.post(jira_issue_endpoint, headers=jira_headers, json=jira_body)
@@ -122,5 +137,5 @@ for entry in time_entries:
         print(F"Skipping ticket {ticket}")
         continue
     else:
-        print(F"Error: request body:{response.request.body} request endpoint: {response.request.url} response:{response.json()}")
+        print(F"Error: status code: {response.status_code} request body:{response.request.body} request endpoint: {response.request.url} response:{response.json()}")
 input("Press enter to exit")

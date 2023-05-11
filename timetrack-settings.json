@@ -1,6 +1,6 @@
 {
     "roundTimeUp": true,
-    "toggl_api_key": "apiKey",
+    "toggl_api_key": "apikey",
     "toggl_api_endpoint": "https://api.track.toggl.com/api/v8/time_entries",
     "projects": [
         {
@@ -11,9 +11,17 @@
     "jiras": [
         {
             "id": 1,
-            "url": "https://someatlassiansite.example/",
-            "email": "jiraloginemail@email.example",
-            "api_key": "apiKey"
+            "url": "https://examplejira.example/",
+            "email": "example@example.example",
+            "auth_type": "basic",
+            "api_key": "apikey"
+        },
+        {
+            "id": 2,
+            "url": "https://examplejira2.example/",
+            "email": "",
+            "auth_type": "bearer",
+            "api_key": "apikey"
         }
     ]
 }
