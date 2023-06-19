@@ -68,6 +68,15 @@ def get_local_time_offset() -> timedelta:
     return result
 def convert_local_time_to_utc(datetime: datetime) -> datetime:
     return datetime - get_local_time_offset()
+def merge_toggl_entries(entries):
+    merged_entries = {}
+    for entry in entries:
+        description = entry['description']
+        if description not in merged_entries:
+            merged_entries[description] = entry.copy()
+        else:
+            merged_entries[description]['duration'] += entry['duration']
+    return list(merged_entries.values())
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 settings_file = os.path.join(current_dir, 'timetrack-settings.json')
@@ -112,6 +121,9 @@ if response.ok:
     time_entries = response.json()
 else:
     print("Toggl API returned an error")
+
+if settings['mergeEntries']:
+    time_entries = merge_toggl_entries(time_entries)
 
 tickets = []
 for entry in time_entries:

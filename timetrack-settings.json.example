@@ -1,0 +1,21 @@
+{
+    "roundTimeUp": true,
+    "mergeEntries": true,
+    "toggl_api_key": "API_KEY",
+    "toggl_api_endpoint": "https://api.track.toggl.com/api/v8/time_entries",
+    "projects": [
+        {
+            "key": "TEST",
+            "jiraId": 1
+        }
+    ],
+    "jiras": [
+        {
+            "id": 1,
+            "url": "https://examplesite.example/",
+            "email": "email@example.example",
+            "auth_type": "basic",
+            "api_key": "API_KEY"
+        }
+    ]
+}
