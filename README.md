@@ -1,4 +1,5 @@
 # TogglToJira
+Quick hack job to export Toggl entries to Jira
 
 ## How to install
 
